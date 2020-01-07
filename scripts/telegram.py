@@ -73,6 +73,7 @@ class ROSTopicHzLocal(ROSTopicHz):
             min_delta = min(self.times)
 
             self.last_printed_tn = self.msg_tn
+
         return("rate: %.3f min: %.3fs max: %.3fs std dev: %.5fs window: %s\n"%(rate, min_delta, max_delta, std_dev, n+1))
 
 def _rostopic_hz(topic, window_size=-1, filter_expr=None):
@@ -150,9 +151,9 @@ def get_data_service(service=None):
        print result
        return result
     except rospy.ServiceException, e:
-       rospy.loginfo("Service call failed: %s"%e)
-       pdb.set_trace()
-       #pass
+       print(sys.exc_info())
+       #pdb.set_trace()
+       pass
 
 def mavlink_message_handler(msg):
     global gupdate
@@ -226,8 +227,8 @@ def button(bot, update):
            start(bot,update)
     except:
        print(sys.exc_info())
-       pdb.set_trace()
-       #pass
+       #pdb.set_trace()
+       pass
 
 def getDistanceData(bot, update, topic):
     query = update.callback_query
@@ -254,6 +255,11 @@ def getDistanceData(bot, update, topic):
 
 @send_typing_action
 def mavlinkCmd(bot, update):
+    if str(update.message.chat.id) != chatid:
+       #pdb.set_trace()
+       update.message.reply_text(text="Incorrect chatid, please update chatid to %s in token.yaml, and restart node " %update.message.chat.id )
+       return
+
     logger(bot, update)
     try:
        ignoreCmd = { ">": "", "<":"", "..":"", ".":"" }
@@ -325,8 +331,9 @@ def mavlinkCmd(bot, update):
           mavlink_exec(update.message.text)
     except:
        print(sys.exc_info())
-       pdb.set_trace()
-       #pass
+       update.message.reply_text(text=sys.exc_info())
+       #pdb.set_trace()
+       pass
 
 def getTopicsMenu(cols = 1, type = "sensor_msgs/Range", prefix = "distance"):
     topics = get_topics(type)
@@ -724,6 +731,7 @@ mavlink_pub = rospy.Publisher('mavlink/to', Mavlink, queue_size=1)
 mavlink_recv = ''
 rospy.init_node('clever_telegram')
 token = rospy.get_param('/telegram/token', None)
+chatid = rospy.get_param('/telegram/chatid', None)
 mavlink_sub = rospy.Subscriber('mavlink/from', Mavlink, mavlink_message_handler)
 
 msg = mavutil.mavlink.MAVLink_heartbeat_message(mavutil.mavlink.MAV_TYPE_GCS, 0, 0, 0, 0, 0)

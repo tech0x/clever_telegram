@@ -5,3 +5,4 @@
 
 telegram:
   token: "BOT_TOKEN"
+  chatid: "telegram_chatid"
