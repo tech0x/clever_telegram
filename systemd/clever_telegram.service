@@ -6,8 +6,7 @@ After=network.target
 [Service]
 Type=simple
 User=pi
-#ExecStart=/usr/bin/screen -Dm bash -c "source /opt/ros/melodic/setup.bash && roslaunch clever_telegram clever_telegram.launch"
-#ExecStart=/usr/bin/screen -Dm bash -c "source /opt/ros/kinetic/setup.bash && roslaunch clever_telegram clever_telegram.launch"
+ExecStart=/usr/bin/screen -Dm bash -c "source /home/pi/catkin_ws/devel/setup.bash && roslaunch clever_telegram clever_telegram.launch"
 Restart=always
 RestartSec=3
 
