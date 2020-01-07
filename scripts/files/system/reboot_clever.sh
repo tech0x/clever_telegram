@@ -1,0 +1,4 @@
+
+sudo systemctl restart clever
+
+

@@ -1,0 +1,5 @@
+
+sudo halt -p
+
+
+

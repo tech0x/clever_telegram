@@ -1,0 +1,3 @@
+<launch>
+    <node pkg="clever_telegram" type="undistort_camera.py" name="undistort_camera" output="log"/>
+</launch>
