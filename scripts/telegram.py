@@ -601,6 +601,7 @@ def error(bot, update, error):
 
 @send_typing_action
 def listParams(bot, update):
+    found = False
     mavros.param.param_get_all(force_pull=True)
     cmd = update._effective_message.text
     print cmd
@@ -609,13 +610,19 @@ def listParams(bot, update):
 
     search = cmd[5:]
     print "Launch search %s " % search
+    #update.message.reply_text(" Launch search %s " %search)
     if search == "":
        return False
 
     for p in params:
        if p.find(search.strip().upper()) != -1:
+           found = True
            print "Found %s %s => %s" % (search, p, params.get(p))
            update.message.reply_text(" %s => %s " % (p, params.get(p)))
+
+    if found == False:
+       update.message.reply_text(" Nothing found for %s " % search)
+
 
 @send_typing_action
 def setParam(bot, update):
@@ -653,17 +660,28 @@ def loadProfile(bot, update, profile = "profile0"):
     logger(bot, update)
 
     param_received, param_list = mavros.param.param_get_all(True)
-    update.message.reply_text("Parameters received  %s " % param_received)
     param_file = mavros.param.QGroundControlParam(True)
+
+    if os.path.isfile(profile): 
+       update.message.reply_text("Please wait, uploading in progress")
+    else:
+       update.message.reply_text("Missing profile data for %s " %profile)
+
     file = open(profile, "r")
     param_transfered = mavros.param.param_set_list(param_file.read(file))
-    update.message.reply_text("Parameters profile %s loaded " % profile)
+    update.message.reply_text("Parameters received  %s " % param_received)
+    update.message.reply_text("Parameters profile %s uploaded " % profile)
 
 #@send_typing_action
 def diffProfile(bot, update, profile = "profile0"):
     cmd = update._effective_message.text
     print cmd
     logger(bot, update)
+
+    if os.path.isfile(profile): 
+       update.message.reply_text("Please wait, operation in progress")
+    else:
+       update.message.reply_text("Missing profile data for %s " %profile)
 
     param_received, param_list = mavros.param.param_get_all(True)
     param_hash_file = {}
