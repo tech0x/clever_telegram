@@ -135,7 +135,7 @@ Incorrect chatid, please update chatid to 442000126 in token.yaml, and restart n
 ```
 systemctl enable /home/pi/catkin_ws/src/clever_telegram/systemd/clever_telegram.service 
 ```
-
+<center>
 <img src="https://raw.githubusercontent.com/tech0x/clever_telegram/master/images/main_menu.png?raw=true"/><br><br>
 <img src="https://raw.githubusercontent.com/tech0x/clever_telegram/master/images/undistortion.png?raw=true"/><br><br>
 <img src="https://raw.githubusercontent.com/tech0x/clever_telegram/master/images/calibrate.png?raw=true"/><br><br>
@@ -144,6 +144,6 @@ systemctl enable /home/pi/catkin_ws/src/clever_telegram/systemd/clever_telegram.
 <img src="https://raw.githubusercontent.com/tech0x/clever_telegram/master/images/profiles.png?raw=true"/><br><br>
 <img src="https://raw.githubusercontent.com/tech0x/clever_telegram/master/images/range.png?raw=true"/><br><br>
 <img src="https://raw.githubusercontent.com/tech0x/clever_telegram/master/images/set_value.png?raw=true"/><br><br>
-
+</center>
 <br>
 <br>
