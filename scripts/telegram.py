@@ -17,14 +17,10 @@ import subprocess
 import re
 import traceback
 import numpy
-import rospy
-import tf2_ros
-import tf2_geometry_msgs
 import rostopic
 import mavros
 import csv
 import sys
-import tf.transformations as t
 
 import pdb
 
@@ -32,22 +28,18 @@ from os import listdir
 from os.path import isfile, join
 from threading import Event
 from functools import wraps
-from collections import OrderedDict
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, ChatAction
 from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageHandler, Filters
 from telegram.ext.dispatcher import run_async
 from cv_bridge import CvBridge, CvBridgeError
 from pymavlink import mavutil
-from std_srvs.srv import Trigger
-from sensor_msgs.msg import Image, CompressedImage, BatteryState, Image, CameraInfo, NavSatFix, Imu, Range
+from sensor_msgs.msg import Image, CompressedImage, CameraInfo, Imu, Range
 from mavros_msgs.msg import State, OpticalFlowRad, Mavlink, ParamValue
 from mavros_msgs.srv import ParamPull, ParamPush, ParamGet, ParamSet
-from geometry_msgs.msg import PoseStamped, TwistStamped, PoseWithCovarianceStamped, Vector3Stamped
-from visualization_msgs.msg import MarkerArray as VisualizationMarkerArray
-from mavros import mavlink, param
+from mavros import mavlink, param, command
+#from mavros.utils import *
 from rostopic import get_topic_class, ROSTopicHz
 from clever import srv
-from aruco_pose.msg import MarkerArray
 
 class ROSTopicHzLocal(ROSTopicHz):
     def print_hz(self):
@@ -136,6 +128,16 @@ def get_image(image_topic=None):
     rospy.loginfo("Saved to: " + img_file_path)
     return img_file_path
 
+def get_image_file(bot, update, image_file=None):
+    global gupdate
+
+    image_topics = get_topics()
+    distance_topics = get_topics("sensor_msgs/Range")
+    query = update.callback_query
+    bot.send_photo(chat_id=query.message.chat_id, photo=open(image_file, 'rb'), caption="Image "+query.data)
+    
+    return True
+
 def get_data(topic=None):
     rospy.loginfo("Getting topic...")
     msg = rospy.wait_for_message(topic, Range, 3)
@@ -192,8 +194,7 @@ def mavlink_exec(cmd, timeout=3.0):
         cmd += '\n'
     msg = mavutil.mavlink.MAVLink_serial_control_message(
         device=mavutil.mavlink.SERIAL_CONTROL_DEV_SHELL,
-        #flags=mavutil.mavlink.SERIAL_CONTROL_FLAG_RESPOND | mavutil.mavlink.SERIAL_CONTROL_FLAG_EXCLUSIVE | mavutil.mavlink.SERIAL_CONTROL_FLAG_MULTI,
-        flags=mavutil.mavlink.SERIAL_CONTROL_FLAG_RESPOND | mavutil.mavlink.SERIAL_CONTROL_FLAG_MULTI,
+        flags=mavutil.mavlink.SERIAL_CONTROL_FLAG_RESPOND | mavutil.mavlink.SERIAL_CONTROL_FLAG_EXCLUSIVE | mavutil.mavlink.SERIAL_CONTROL_FLAG_MULTI,
         timeout=3,
         baudrate=0,
         count=len(cmd),
@@ -315,6 +316,11 @@ def mavlinkCmd(bot, update):
           diffProfile(bot, update, "profile"+profileid)
        elif update.message.text == 'back' or update.message.text == '..':
           start(bot,update)
+       elif update.message.text[:1] == '#':
+          """ Execute simple shell commands """
+          result = os.popen("%s"%(update.message.text[1:])).read()
+          print result
+          update.message.reply_text(text="%s\n%s" % (result[0:3950], "..." if len(result)>3950 else ""))
        elif update.message.text != "" and update.message.text in cmds:
           mavlink_exec(cmds[update.message.text])
        elif update.message.text != "" and update.message.text in filesSystem:
@@ -734,6 +740,25 @@ def saveProfile0(bot, update, profile = "profile0"):
 def loadProfile0(bot, update, profile = "profile0"):
     loadProfile(bot, update, profile)
 
+@send_typing_action
+def startLog(bot, update):
+    update.message.reply_text("Mavlink logger starting")
+    rospack = rospkg.RosPack()
+    cmd = rospack.get_path(rospy.get_name()[1:])+"/scripts/run_screen.sh \"rosrun clever_telegram mavlink_logger.py\" ";
+    print(cmd)
+    #result = subprocess.call("'", shell=True)
+    result = os.popen(cmd).read()
+    print(result)
+    time.sleep(2)
+    print(command.long( broadcast=0, command=2510, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
+
+@send_typing_action
+def stopLog(bot, update):
+    update.message.reply_text("Mavlink logger stoping")
+    print(command.long( broadcast=0, command=2511, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
+    time.sleep(2)
+    result = os.popen("rosnode kill mavlink_logger 2>&1").read()
+
 @run_async
 def heartbeat():
     print "Heartbeat: %s" % time.time()
@@ -756,6 +781,7 @@ msg = mavutil.mavlink.MAVLink_heartbeat_message(mavutil.mavlink.MAV_TYPE_GCS, 0,
 msg.pack(mavutil.mavlink.MAVLink('', 2, 1))
 ros_msg = mavlink.convert_to_rosmsg(msg)
 mavlink_pub.publish(ros_msg)
+
 ht_time = time.time()
 
 updater = Updater(token)
@@ -767,6 +793,8 @@ updater.dispatcher.add_handler(CommandHandler('set', setParam))
 updater.dispatcher.add_handler(CommandHandler('save', saveProfile0))
 updater.dispatcher.add_handler(CommandHandler('upload', loadProfile0))
 updater.dispatcher.add_handler(CommandHandler('diff', diffProfile0))
+updater.dispatcher.add_handler(CommandHandler('stopLog', stopLog))
+updater.dispatcher.add_handler(CommandHandler('startLog', startLog))
 updater.dispatcher.add_handler(CommandHandler('start', start))
 updater.dispatcher.add_handler(CommandHandler('help', help))
 updater.dispatcher.add_error_handler(error)
