@@ -184,16 +184,18 @@ def mavlink_message_handler(msg):
                   gupdate.message.reply_text(str.join("\n", mvr))
                   recv_event.set()
 
-        if hasattr(mav_msg, 'text') and hasattr(gupdate, 'message'):
+        if hasattr(mav_msg, 'text'):
             if logauto != None and msg.msgid == 253 and  'ARMED' == mav_msg.text[:5]:
                startLog("", gupdate)
 
             if logauto != None and msg.msgid == 253 and  'DISARMED' == mav_msg.text[:8]:
                stopLog("", gupdate)
 
+        if hasattr(gupdate, 'message'):
             gupdate.message.reply_text(mav_msg.text)
-            print mav_msg
-            #print ("%s %s" % (msg.msgid,mavlink_recv))
+
+        print mav_msg
+        #print ("%s %s" % (msg.msgid,mavlink_recv))
 
 def mavlink_exec(cmd, timeout=3.0):
     global mavlink_recv
@@ -646,14 +648,23 @@ def setParam(bot, update):
     logger(bot, update)
     params = rospy.get_param(mavros.get_topic('param'))
 
-    print "Set %s => new value %s, old value %s " % (cmd.split()[1], cmd.split()[3], params.get(cmd.split()[1]))
+    newval = float(cmd.split()[3])
+
+    print "Set %s => new value %s, old value %s " % (cmd.split()[1], newval, params.get(cmd.split()[1]))
     if cmd.split()[1] == "" or cmd.split()[3] == "":
-       update.message.reply_text("Missing data  %s => %s " % (cmd.split()[1], cmd.split()[3]))
+       update.message.reply_text("Missing data  %s => %s " % (cmd.split()[1], newval))
        return
 
-    if cmd.split()[1] != "" and cmd.split()[3] != "":
-       print "Result:  %s" % mavros.param.param_set(cmd.split()[1],int(cmd.split()[3]))
-       update.message.reply_text("Set %s => new value %s, old value %s " % (cmd.split()[1], cmd.split()[3], params.get(cmd.split()[1])))
+    #pdb.set_trace()
+
+    if newval == params.get(cmd.split()[1]):
+       print "Already set: %s => %s"%(cmd.split()[1], newval)
+       update.message.reply_text("Already set: %s => %s"%(cmd.split()[1], newval))
+       return
+
+    if cmd.split()[1] != "" and newval != "":
+       print "Result:  %s" % mavros.param.param_set(cmd.split()[1], newval)
+       update.message.reply_text("Set %s => new value %s, old value %s " % (cmd.split()[1], newval, params.get(cmd.split()[1])))
 
 #@send_typing_action
 def saveProfile(bot, update, profile = "profile0"):
