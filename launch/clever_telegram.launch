@@ -1,4 +1,5 @@
 <launch>
     <rosparam file="$(find clever_telegram)/config/token.yaml" command="load" />
+    <rosparam file="$(find clever_telegram)/config/logger.yaml" command="load" />
     <node pkg="clever_telegram" type="telegram.py" name="clever_telegram" output="screen"/>
 </launch>

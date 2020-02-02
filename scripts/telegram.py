@@ -161,10 +161,13 @@ def mavlink_message_handler(msg):
     global gupdate
     global mavlink_recv
     global ht_time
+    global logauto
 
     if ht_time+4 < time.time():
         mavlink_pub.publish(ros_msg)
         ht_time = time.time()
+
+
 
     if msg.msgid == 126 or msg.msgid == 120 or msg.msgid == 253 :
         mav_bytes_msg = mavlink.convert_to_bytes(msg)
@@ -182,6 +185,12 @@ def mavlink_message_handler(msg):
                   recv_event.set()
 
         if hasattr(mav_msg, 'text') and hasattr(gupdate, 'message'):
+            if logauto != None and msg.msgid == 253 and  'ARMED' == mav_msg.text[:5]:
+               startLog("", gupdate)
+
+            if logauto != None and msg.msgid == 253 and  'DISARMED' == mav_msg.text[:8]:
+               stopLog("", gupdate)
+
             gupdate.message.reply_text(mav_msg.text)
             print mav_msg
             #print ("%s %s" % (msg.msgid,mavlink_recv))
@@ -740,7 +749,7 @@ def saveProfile0(bot, update, profile = "profile0"):
 def loadProfile0(bot, update, profile = "profile0"):
     loadProfile(bot, update, profile)
 
-@send_typing_action
+#@send_typing_action
 def startLog(bot, update):
     update.message.reply_text("Mavlink logger starting")
     rospack = rospkg.RosPack()
@@ -749,12 +758,13 @@ def startLog(bot, update):
     #result = subprocess.call("'", shell=True)
     result = os.popen(cmd).read()
     print(result)
-    time.sleep(2)
+    print(command.long( broadcast=0, command=2511, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
+    time.sleep(3)
     print(command.long( broadcast=0, command=2510, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
 
-@send_typing_action
+#@send_typing_action
 def stopLog(bot, update):
-    update.message.reply_text("Mavlink logger stoping")
+    update.message.reply_text("Mavlink logger stopping")
     print(command.long( broadcast=0, command=2511, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
     time.sleep(2)
     result = os.popen("rosnode kill mavlink_logger 2>&1").read()
@@ -773,6 +783,7 @@ link = mavutil.mavlink.MAVLink('', 255, 1)
 mavlink_pub = rospy.Publisher('mavlink/to', Mavlink, queue_size=1)
 mavlink_recv = ''
 rospy.init_node('clever_telegram')
+logauto = rospy.get_param('/logger/autostart', None)
 token = rospy.get_param('/telegram/token', None)
 chatid = rospy.get_param('/telegram/chatid', None)
 mavlink_sub = rospy.Subscriber('mavlink/from', Mavlink, mavlink_message_handler)
