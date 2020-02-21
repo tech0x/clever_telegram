@@ -769,16 +769,26 @@ def startLog(bot, update):
     #result = subprocess.call("'", shell=True)
     result = os.popen(cmd).read()
     print(result)
-    print(command.long( broadcast=0, command=2511, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
-    time.sleep(3)
-    print(command.long( broadcast=0, command=2510, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
+    #print(command.long( broadcast=0, command=2511, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
+    #time.sleep(3)
+    #print(command.long( broadcast=0, command=2510, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
 
 #@send_typing_action
 def stopLog(bot, update):
+    global logauto
     update.message.reply_text("Mavlink logger stopping")
     print(command.long( broadcast=0, command=2511, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
     time.sleep(2)
     result = os.popen("rosnode kill mavlink_logger 2>&1").read()
+
+    if logauto and os.path.exists(os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg"):
+       #update.message.reply_text("Logger status %s %s"%(logauto,os.path.exists(os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg")))
+       #pdb.set_trace()
+       #bot.send_photo(chat_id=update.message.chat.id, photo=open("/tmp/telegram_last_image.jpg", 'rb'), caption="Test image")
+       file = os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg";
+       bot.send_document(chat_id=update.message.chat.id, document=open(file, 'r'), caption="Last fligth log %s"%time.ctime(os.path.getmtime(file)))
+    if logauto and os.path.exists(os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg") != True:
+       update.message.reply_text("Missing file log, check permissions for logs dirrectory")
 
 @run_async
 def heartbeat():

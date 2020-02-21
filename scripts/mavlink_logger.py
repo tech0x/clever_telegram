@@ -47,6 +47,7 @@ class MavrosLogStreaming():
         self.measured_data = 0
         self.m = False
         self.ulog = False
+        self.start_log()
 
     def check_sequence(self, seq):
         if self.last_sequence == -1:
@@ -171,6 +172,13 @@ class MavrosLogStreaming():
         else:
            print(self.file.name+"\n")
 
+    def start_log(self):
+        print(command.long( broadcast=0, command=2511, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
+        time.sleep(1)
+        print(command.long( broadcast=0, command=2510, param1=0, param2=0, param3=0, param4=0, param5=0, param6=0, param7=0))
+
+
+
 def sigterm_handler(_signo = "", _stack_frame = ""):
     print("Debug request received")
     mavroslog.closeFile()
@@ -189,6 +197,9 @@ if __name__ == '__main__':
     mavlink_recv = ''
     rospy.init_node('mavlink_logger')
     filename = os.path.dirname(os.path.realpath(__file__))+datetime.datetime.now().strftime("/logs/%Y-%m-%d_%H-%M-%S.ulg")
+    if os.path.exists(os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg"):
+       os.unlink(os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg")
+    os.symlink(filename, os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg")
     mavroslog = MavrosLogStreaming(mavlink, filename)
     sub = rospy.Subscriber('mavlink/from', Mavlink, mavroslog.message_handler)
     mavlink_pub = rospy.Publisher('mavlink/to', Mavlink, queue_size=1)
