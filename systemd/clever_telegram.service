@@ -1,6 +1,6 @@
 [Unit]
 Description=Clever ROS package
-Requires=clever.service
+Requires=roscore.service
 After=network.target
 
 [Service]
