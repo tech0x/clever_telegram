@@ -180,7 +180,7 @@ def mavlink_message_handler(msg):
                   mvr.remove("nsh> ")
                mavlink_recv = ''
                print mvr
-               if hasattr(gupdate, 'message') and hasattr(gupdate, 'message'):
+               if hasattr(gupdate, 'message') and str.join("", mvr).strip() != '':
                   gupdate.message.reply_text(str.join("\n", mvr))
                   recv_event.set()
 
@@ -191,7 +191,7 @@ def mavlink_message_handler(msg):
             if logauto != None and msg.msgid == 253 and  'DISARMED' == mav_msg.text[:8]:
                stopLog("", gupdate)
 
-        if hasattr(gupdate, 'message'):
+        if hasattr(gupdate, 'message') and hasattr(mav_msg, 'text'):
             gupdate.message.reply_text(mav_msg.text)
 
         print mav_msg
@@ -529,7 +529,7 @@ def distanceSub(bot, update):
 
 def selfCheck(bot, update):
     logger(bot, update)
-    result = os.popen("rosrun clever selfcheck.py 2>&1").read()
+    result = os.popen("rosrun clever selfcheck.py || rosrun clover selfcheck.py 2>&1").read()
     lines = result.splitlines()
     try:
        for x in lines:
@@ -787,6 +787,7 @@ def stopLog(bot, update):
        #bot.send_photo(chat_id=update.message.chat.id, photo=open("/tmp/telegram_last_image.jpg", 'rb'), caption="Test image")
        file = os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg";
        bot.send_document(chat_id=update.message.chat.id, document=open(file, 'r'), caption="Last fligth log %s"%time.ctime(os.path.getmtime(file)))
+       #update.message.reply_text("Last fligth log %s"%time.ctime(os.path.getmtime(file)))
     if logauto and os.path.exists(os.path.dirname(os.path.realpath(__file__))+"/logs/current.ulg") != True:
        update.message.reply_text("Missing file log, check permissions for logs dirrectory")
 
